@@ -97,6 +97,8 @@ class Board
             if move[0].downcase == move[0]
                 possible_pieces.select! {|piece| piece.pos[1] == y}
             else 
+            end
+        end
 
 
         raise 'two possible pieces taking is not yet supported' if possible_pieces.length > 1
