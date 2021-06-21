@@ -4,6 +4,10 @@ class NullPiece < Piece
     def initialize
     end
 
+    def fen
+        nil
+    end
+
     def moves
         nil
     end

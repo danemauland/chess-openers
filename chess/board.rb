@@ -15,7 +15,9 @@ class Board
     def set_up_board
         board = Array.new(8) {Array.new(8, @sentinel)}
 
-        @black_rooks = [Rook.new(:black, self, [0,0]), Rook.new(:black, self, [0,7])]
+        @black_queenside_rook = Rook.new(:black, self, [0,0])
+        @black_kingside_rook = Rook.new(:black, self, [0,7])
+        @black_rooks = [@black_queenside_rook, @black_kingside_rook]
         @black_knights = [Knight.new(:black, self, [0,1]), Knight.new(:black, self, [0,6])]
         @black_bishops = [Bishop.new(:black, self, [0,2]), Bishop.new(:black, self, [0,5])]
         @black_queen = Queen.new(:black, self, [0,3])
@@ -37,7 +39,9 @@ class Board
             @black_pawns << pawn
         end
 
-        @white_rooks = [Rook.new(:white, self, [7,0]), Rook.new(:white, self, [7,7])]
+        @white_queenside_rook = Rook.new(:white, self, [7,0])
+        @white_kingside_rook = Rook.new(:white, self, [7,7])
+        @white_rooks = [@white_queenside_rook, @white_kingside_rook]
         @white_knights = [Knight.new(:white, self, [7,1]), Knight.new(:white, self, [7,6])]
         @white_bishops = [Bishop.new(:white, self, [7,2]), Bishop.new(:white, self, [7,5])]
         @white_queen = Queen.new(:white, self, [7,3])
@@ -65,6 +69,7 @@ class Board
     def initialize(rows = nil)
         @sentinel = NullPiece.instance
         @rows = rows || set_up_board
+        @en_passant = nil
     end
 
     def get_piece_char(move)
@@ -93,15 +98,18 @@ class Board
         possible_pieces = [*get_moving_pieces(piece_char, color)]
         possible_pieces.select! {|piece| piece.valid_move?(end_pos)}
         if possible_pieces.length > 1
-            y = ('a'..'h').index(move[1])
-            if move[0].downcase == move[0]
+            piece_col_idx = piece_char == "P" ? 0 : 1
+            y = ('a'..'h').to_a.index(move[piece_col_idx])
+            if y
                 possible_pieces.select! {|piece| piece.pos[1] == y}
             else 
+                x = ('1'..'8').to_a.index(move[1])
+                possible_pieces.select! {|piece| piece.pos[0] == x}
             end
         end
 
 
-        raise 'two possible pieces taking is not yet supported' if possible_pieces.length > 1
+        # raise 'two possible pieces taking is not yet supported' if possible_pieces.length > 1
         raise 'move not found' if possible_pieces.length == 0
         return possible_pieces[0]
     end
@@ -131,17 +139,98 @@ class Board
     end
 
     def make_move(move, color)
+        return castle(move, color) if move[0..2] == "O-O"
         piece = get_moving_piece(move, color)
         x, y = piece.pos
         raise "no piece there" if rows[x][y].empty?
         end_pos = get_end_pos(move)
         end_x, end_y = end_pos
+        @en_passant = nil;
+        if (piece.is_pawn? && piece.at_start_row? && (end_x - x).abs == 2)
+            @en_passant = [(x + end_x) / 2, end_y]
+        elsif piece.is_king?
+            cancel_castle(color)
+        end
         rows[end_x][end_y] = piece
         piece.pos = end_pos
         rows[x][y] = sentinel
     end
 
-    def move_piece!(color, start_pos, end_pos)
+    def cancel_castle(color)
+        rooks = color == :white ? @white_rooks : @black_rooks
+        rooks.each {|rook| rook.can_castle = false}
+    end
+
+    def is_en_passant?(pos)
+        pos == @en_passant
+    end
+
+    def to_FEN(cur_color)
+        fen = []
+        fen_rows = []
+        rows.each do |row|
+            row_fen = []
+            row.each do |piece|
+                piece_fen = piece.fen
+                if piece_fen
+                    row_fen << piece_fen
+                elsif row_fen.last.is_a? Integer
+                    row_fen[row_fen.length - 1] += 1
+                else
+                    row_fen << 1
+                end
+            end
+            fen_rows << row_fen.join('')
+        end
+
+        fen << fen_rows.join('/')
+        fen << cur_color[0]
+        fen << castle_fen
+        fen << en_passant_fen
+        fen.join(' ')
+    end
+
+    def en_passant_fen
+        return '-' if !@en_passant
+        ('a'..'h').to_a[@en_passant[1]] + (8 - @en_passant[0]).to_s
+    end
+
+    def castle_fen
+       fen = ''
+       fen += 'K' if @white_kingside_rook.can_castle
+       fen += 'Q' if @white_queenside_rook.can_castle
+       fen += 'k' if @black_kingside_rook.can_castle
+       fen += 'q' if @black_queenside_rook.can_castle
+       fen = '-' if fen.length == 0
+       fen
+    end
+
+    def castle(move, color)
+        cancel_castle(color)
+        is_queen_side = move[0..4] == "O-O-O"
+
+        row = color == :white ? 7 : 0
+
+        king_start_col = 4
+        king_end_col = is_queen_side ? 2 : 6
+        king_start_pos = [row, king_start_col]
+        king_end_pos = [row, king_end_col]
+        
+
+        rook_start_col = is_queen_side ? 0 : 7
+        rook_end_col = is_queen_side ? 3 : 5
+        rook_start_pos = [row, rook_start_col]
+        rook_end_pos = [row, rook_end_col]
+
+        p king_start_pos
+        p king_end_pos
+        p rook_start_pos
+        p rook_end_pos
+        move_piece!(color, king_start_pos, king_end_pos, true)
+        move_piece!(color, rook_start_pos, rook_end_pos, true)
+    end
+
+    def move_piece!(color, start_pos, end_pos, castle = false)
         x, y = start_pos
         piece = rows[x][y]
         end_x, end_y = end_pos

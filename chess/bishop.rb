@@ -6,6 +6,10 @@ class Bishop < Piece
         ' ♝ '.colorize(color)
     end
 
+    def fen
+        color == :white ? 'B' : 'b'
+    end
+
     protected
     def move_dirs
         horizontal = false

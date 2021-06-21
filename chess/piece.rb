@@ -24,6 +24,10 @@ class Piece
         @pos = val
     end
 
+    def is_king?
+        false
+    end
+
     def valid_moves
         moves.reject {|move| move_into_check?(move)}
     end
@@ -40,6 +44,10 @@ class Piece
 
     def board=(new_board)
         @board = new_board
+    end
+
+    def is_pawn?
+        false
     end
 
 end

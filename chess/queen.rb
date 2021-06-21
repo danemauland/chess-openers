@@ -8,6 +8,10 @@ class Queen < Piece
         ' ♛ '.colorize(color)
     end
 
+    def fen
+        color == :white ? 'Q' : 'q'
+    end
+
     protected
     def move_dirs
         horizontal = true

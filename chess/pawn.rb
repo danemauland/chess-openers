@@ -8,6 +8,17 @@ class Pawn < Piece
         forward_moves + side_attacks
     end
         
+    def fen
+        color == :white ? 'P' : 'p'
+    end
+
+    def at_start_row?
+        (color == :white && pos[0] == 6) || (color == :black && pos[0] == 1)
+    end
+
+    def is_pawn?
+        true
+    end
 
     private
     def forward_moves
@@ -22,9 +33,7 @@ class Pawn < Piece
         moves
     end
 
-    def at_start_row?
-        (color == :white && pos[0] == 6) || (color == :black && pos[0] == 1)
-    end
+    
 
     def forward_dir
         color == :white ? -1 : 1
@@ -55,6 +64,8 @@ class Pawn < Piece
 
     def piece_is_enemy_color?(pos)
         x, y = pos
-        !position_is_empty?(pos) && board.rows[x][y].color != color
+        (!position_is_empty?(pos) && board.rows[x][y].color != color) || board.is_en_passant?(pos)
     end
+
+    
 end

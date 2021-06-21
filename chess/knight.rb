@@ -5,6 +5,10 @@ class Knight < Piece
         ' ♞ '.colorize(color)
     end
 
+    def fen
+        color == :white ? 'N' : 'n'
+    end
+
     protected
     def move_diffs
         [

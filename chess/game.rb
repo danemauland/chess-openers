@@ -33,9 +33,11 @@ class Game
     def play
         puts
         while @current_move
+            cur_color = @is_humans_turn ? @human_color : @computer_color
+            puts @board.to_FEN(cur_color)
             if @is_humans_turn
                 @current_move = @current_move.children[get_move]
-                system("clear")
+                # system("clear")
                 puts @current_move.val
                 # @current_player.make_move(@board)
                 # switch_players
@@ -43,7 +45,7 @@ class Game
                 @current_move = @current_move.children.values.sample
                 puts @current_move.val
             end
-            @board.make_move(@current_move.val, @is_humans_turn ? @human_color : @computer_color)
+            @board.make_move(@current_move.val, cur_color)
             @is_humans_turn = !@is_humans_turn
         end
     end
