@@ -2,8 +2,8 @@ require_relative "board"
 
 class Game
 
-    def initialize(opening, color)
-        @board = Board.new
+    def initialize(opening, color, fen = nil)
+        @board = Board.new(nil, fen)
         @display = Display.new(@board)
         @human_color = color
         @is_humans_turn = @human_color == :white

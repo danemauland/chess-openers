@@ -66,9 +66,126 @@ class Board
         board
     end
 
-    def initialize(rows = nil)
+    def from_fen(fen)
+        board = Array.new(8) {Array.new(8, @sentinel)}
+
+        @black_queenside_rook = Rook.new(:black, self)
+        @black_kingside_rook = Rook.new(:black, self)
+        @black_rooks = [@black_queenside_rook, @black_kingside_rook]
+        @black_knights = [Knight.new(:black, self), Knight.new(:black, self)]
+        @black_bishops = [Bishop.new(:black, self), Bishop.new(:black, self)]
+        @black_queen = Queen.new(:black, self)
+        @black_king = King.new(:black, self)
+
+        @black_pawns = []
+        (0..7).each do |i|
+            pawn = Pawn.new(:black, self)
+            @black_pawns << pawn
+        end
+
+        @white_queenside_rook = Rook.new(:white, self)
+        @white_kingside_rook = Rook.new(:white, self)
+        @white_rooks = [@white_queenside_rook, @white_kingside_rook]
+        @white_knights = [Knight.new(:white, self), Knight.new(:white, self)]
+        @white_bishops = [Bishop.new(:white, self), Bishop.new(:white, self)]
+        @white_queen = Queen.new(:white, self)
+        @white_king = King.new(:white, self)
+
+        @white_pawns = []
+        (0..7).each do |i|
+            pawn = Pawn.new(:white, self)
+            @white_pawns.push(pawn)
+        end
+
+        fen_arr = fen.split(' ')
+        fen_pieces = fen_arr.first.split('')
+        
+        row = 0;
+        col = 0;
+
+        while fen_pieces.length > 0 do
+            piece = fen_pieces.shift
+            case piece do
+            when '/'
+                row++
+                col = 0
+            when 'p'
+                pawn = black_pawns.shift
+                pawn.pos = [row, col]
+                board[row][col] = pawn
+                col++
+            when 'r'
+                rook = black_rooks.shift
+                rook.pos = [row, col]
+                board[row][col] = rook
+                col++
+            when 'n'
+                knight = black_knights.shift
+                knight.pos = [row, col]
+                board[row][col] = knight
+                col++
+                
+            when 'b'
+                bishop = black_bishops.shift
+                bishop.pos = [row, col]
+                board[row][col] = bishop
+                col++
+                
+            when 'q'
+                black_queen.pos = [row, col]
+                board[row][col] = black_queen
+                col++
+                
+            when 'k'
+                black_king.pos = [row, col]
+                board[row][col] = black_king
+                col++
+                
+            when 'P'
+                pawn = white_pawns.shift
+                pawn.pos = [row, col]
+                board[row][col] = pawn
+                col++
+                
+            when 'R'
+                rook = white_rooks.shift
+                rook.pos = [row, col]
+                board[row][col] = rook
+                col++
+                
+            when 'N'
+                knight = white_knights.shift
+                knight.pos = [row, col]
+                board[row][col] = knight
+                col++
+                
+            when 'B'
+                bishop = white_bishops.shift
+                bishop.pos = [row, col]
+                board[row][col] = bishop
+                col++
+                
+            when 'Q'
+                white_queen.pos = [row, col]
+                board[row][col] = white_queen
+                col++
+                
+            when 'K'
+                white_king.pos = [row, col]
+                board[row][col] = white_king
+                col++
+                
+            else
+                col += piece.to_i
+            end
+        end
+
+        board
+    end
+
+    def initialize(rows = nil, fen = nil)
         @sentinel = NullPiece.instance
-        @rows = rows || set_up_board
+        @rows = rows || fen ? from_fen(fen) : set_up_board
         @en_passant = nil
     end
 
@@ -109,7 +226,6 @@ class Board
         end
 
 
-        # raise 'two possible pieces taking is not yet supported' if possible_pieces.length > 1
         raise 'move not found' if possible_pieces.length == 0
         return possible_pieces[0]
     end
